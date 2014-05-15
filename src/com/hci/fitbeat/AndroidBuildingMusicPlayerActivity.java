@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import com.echonest.api.v4.EchoNestException;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -90,7 +92,12 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
         mp.setOnCompletionListener(this);
         
         //Getting all songs list
-        songsList = songManager.getPlayList();
+        try {
+			songsList = songManager.getPlayList();
+		} catch (EchoNestException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
        
         //By default play first song
         playSong(0);

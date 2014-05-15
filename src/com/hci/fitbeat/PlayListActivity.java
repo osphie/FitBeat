@@ -3,6 +3,8 @@ package com.hci.fitbeat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.echonest.api.v4.EchoNestException;
+
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -28,7 +30,12 @@ public class PlayListActivity extends ListActivity {
 		
 		SongsManager plm = new SongsManager();
 		// gets all songs from sdcard
-		this.songsList = plm.getPlayList();
+		try {
+			this.songsList = plm.getPlayList();
+		} catch (EchoNestException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		// looping through playlist
 		for(int i = 0; i < songsList.size(); i++) {
