@@ -5,6 +5,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.echonest.api.v4.EchoNestAPI;
 import com.echonest.api.v4.EchoNestException;
@@ -12,6 +14,7 @@ import com.echonest.api.v4.TimedEvent;
 import com.echonest.api.v4.Track;
 import com.echonest.api.v4.TrackAnalysis;
 
+import android.os.AsyncTask;
 import android.os.Environment;
 
 public class SongsManager {
@@ -21,10 +24,11 @@ public class SongsManager {
 	final String MEDIA_PATH = Environment.getExternalStorageDirectory()
             .getPath() + "/"; 
 	private ArrayList<HashMap<String,String>> songsList = new ArrayList<HashMap<String, String>>();
+	private ArrayList<HashMap<String,String>> songsListTempo = new ArrayList<HashMap<String, String>>();
 	
 	//Constructor 
 	public SongsManager() {
-		
+		new Connection().execute("");
 	}
 	
 	/*
@@ -32,51 +36,33 @@ public class SongsManager {
 	 * and store the details in ArrayList
 	 */
 	public ArrayList<HashMap<String, String>> getPlayList() throws EchoNestException {
-		EchoNestAPI en = new EchoNestAPI("YONAIFTTA0HFKM9J4" );
-		File home = new File(MEDIA_PATH);
+
 		//System.out.println("home found: " + home + " files: " + Environment.getExternalStorageDirectory().listFiles());
-		if(home.listFiles(new FileExtensionFilter()) != null) {
-			System.out.println("found files");
-			if (home.listFiles(new FileExtensionFilter()).length > 0) {
-				for( File file: home.listFiles(new FileExtensionFilter())) {
-					try {
-						System.out.println("file: " + file.getPath());
-						 File currFile = new File(file.getPath());
-						 if(!currFile.exists()) {
-							 System.err.println("Can't fine " + file.getPath());
-						 }
-						 else {
-							 System.out.println("found file " + file.getPath());
-			                Track track = en.uploadTrack(currFile, true);
-			                track.waitForAnalysis(30000);
-			               // TrackAnalysis a = track.getAnalysis();
-			                //System.out.println("Tempo" + a.getTempo());
-			                if (track.getStatus() == Track.AnalysisStatus.COMPLETE) {
-			                    System.out.println("Tempo: " + track.getTempo());
-			                    System.out.println("Loudness: " + track.getLoudness());
-			                    System.out.println();
-			                    System.out.println("Beat start times:");
-			                    
-			                    TrackAnalysis analysis = track.getAnalysis();
-			                    for (TimedEvent beat : analysis.getBeats()) {
-			                        System.out.println("beat " + beat.getStart());
-			                    }
-			                } else {
-			                    System.err.println("Trouble analysing track " + track.getStatus());
-			                }
-						 }
-		            } catch (IOException e) {
-		                System.err.println("Trouble uploading file");
-		            }
-					HashMap<String, String> song = new HashMap<String, String>();
-					song.put("songTitle", file.getName().substring(0, (file.getName().length()-4))); //-4 because .mp3
-					song.put("songPath",  file.getPath());
-					
-					songsList.add(song);
+		
+        
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+
+            @Override
+            public void run() {
+        		EchoNestAPI en = new EchoNestAPI("YONAIFTTA0HFKM9J4" );
+        		File home = new File(MEDIA_PATH);
+				if(home.listFiles(new FileExtensionFilter()) != null) {
+					System.out.println("found files");
+					if (home.listFiles(new FileExtensionFilter()).length > 0) {
+						for( File file: home.listFiles(new FileExtensionFilter())) {
+							HashMap<String, String> song = new HashMap<String, String>();
+							song.put("songTitle", file.getName().substring(0, (file.getName().length()-4))); //-4 because .mp3
+							song.put("songPath",  file.getPath());
+							
+							songsList.add(song);
 				}
 			}
 		}
+
 		System.out.println("size of songslist after SongsManager: " + songsList.size());
+	    }
+	   }, 0, 30000);
 		return songsList;
 	}
 	
@@ -89,6 +75,73 @@ public class SongsManager {
 		@Override
 		public boolean accept(File dir, String name) { //dir= where file was found; name
 			return (name.endsWith(".mp3") || name.endsWith(".MP3"));
+		}
+		
+	}
+	
+	private class Connection extends AsyncTask {
+
+		@Override
+		protected Object doInBackground(Object... params) {
+			//System.out.println("I am inside async task");
+			EchoNestAPI en = new EchoNestAPI("YONAIFTTA0HFKM9J4" );
+			File home = new File(MEDIA_PATH);
+		//	System.out.println("home found: " + home + " files: " + Environment.getExternalStorageDirectory().listFiles());
+			if(home.listFiles(new FileExtensionFilter()) != null) {
+			//	System.out.println("found files");
+				if (home.listFiles(new FileExtensionFilter()).length > 0) {
+					for( File file: home.listFiles(new FileExtensionFilter())) {
+						try {
+						//	System.out.println("file in async: " + file.getPath());
+							 File currFile = new File(file.getPath());
+							 if(!currFile.exists()) {
+								 System.err.println("Can't find in async " + file.getPath());
+							 }
+							 else {
+								 System.out.println("found file in async " + file.getPath());
+				                Track track = en.uploadTrack(currFile, true);
+				                track.waitForAnalysis(30000);
+				                System.out.println("waiting for analysis " + file.getPath());
+				                if (track.getStatus() == Track.AnalysisStatus.COMPLETE) {
+				                    System.out.println("Tempo: " + track.getTempo());
+				                   /* System.out.println("Loudness: " + track.getLoudness());
+				                    System.out.println();
+				                    System.out.println("Beat start times:");*/
+				                    
+				                   /* TrackAnalysis analysis = track.getAnalysis();
+				                    for (TimedEvent beat : analysis.getBeats()) {
+				                        System.out.println("beat " + beat.getStart());
+				                    }*/
+									HashMap<String, String> song = new HashMap<String, String>();
+									//song.put("songTitle", file.getName().substring(0, (file.getName().length()-4))); //-4 because .mp3
+									song.put("songPath",  file.getPath());
+									
+									int tempo = (int) track.getTempo();
+									if(track.getTempo() >= 120 ) {
+										song.put("tempo", "fast");
+									}
+									else if(tempo <= 90) {
+										song.put("tempo", "slow");
+									}
+									else {
+										song.put("tempo", "med");
+									}
+									
+									songsListTempo.add(song);
+				                } else {
+				                    System.err.println("Trouble analysing track " + track.getStatus());
+				                }
+							 }
+			            } catch (IOException e) {
+			                System.err.println("Trouble uploading file");
+			            } catch (EchoNestException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			return null;
 		}
 		
 	}

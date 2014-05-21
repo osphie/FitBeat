@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.echonest.api.v4.EchoNestException;
 
@@ -15,6 +17,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
+import android.net.wifi.p2p.WifiP2pManager.ActionListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -91,13 +94,16 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
         songProgressBar.setOnSeekBarChangeListener(this);
         mp.setOnCompletionListener(this);
         
-        //Getting all songs list
-        try {
-			songsList = songManager.getPlayList();
-		} catch (EchoNestException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+
+                //Getting all songs list
+                try {
+        			songsList = songManager.getPlayList();
+        		} catch (EchoNestException e) {
+        			e.printStackTrace();
+        		}
+   
+        
+
        
         //By default play first song
         playSong(0);
@@ -274,6 +280,8 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
                 }
             }
         });
+        
+
     }
 
     /* 
