@@ -14,6 +14,9 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+
+import com.parse.Parse;
+import com.parse.ParseAnalytics;
 /*
  *  Class will display list of songs in list layout by using SongsManager.java class
  */

@@ -16,6 +16,9 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.os.Build;
 
+import com.parse.Parse;
+import com.parse.ParseAnalytics;
+
 public class MainActivity extends ActionBarActivity implements SensorEventListener{
 	
 	Sensor accelerometer;
