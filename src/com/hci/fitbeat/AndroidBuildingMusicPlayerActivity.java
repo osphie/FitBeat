@@ -73,14 +73,20 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
     private boolean isShuffle = false;
     private boolean isRepeat = false;
     private ArrayList<HashMap<String, String>> songsList = new ArrayList<HashMap<String, String>>();
+    private HashMap<String, String> masterList = new HashMap<String, String>();
     private ArrayList<HashMap<String, String>> songsListEasy = new ArrayList<HashMap<String, String>>();
     private ArrayList<HashMap<String, String>> songsListMed = new ArrayList<HashMap<String, String>>();
     private ArrayList<HashMap<String, String>> songsListHard = new ArrayList<HashMap<String, String>>();
+    private ArrayList<HashMap<String, String>> songsListCur;
     private int genListSize;
     private int easyListSize;
     private int medListSize;
     private int hardListSize;
     protected boolean uploaded = false;
+    protected String easy = "easy";
+    protected String med = "med";
+    protected String hard = "hard";
+    private int mode = 0;
     
     //songmanager variables
     final String MEDIA_PATH = Environment.getExternalStorageDirectory()
@@ -144,13 +150,18 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
         	new Connection().execute("");
 			songsList = getPlayList();
 			genListSize = songsList.size();
+			easyListSize = songsListEasy.size();
+			medListSize = songsListMed.size();
+			hardListSize = songsListHard.size();
+			System.out.println("masterlistsize: " + masterList.size() + " easy: " + songsListEasy.size() + 
+					" med: " + songsListMed.size() + " hard: " + songsListHard.size());
 		} catch (EchoNestException e) {
 			e.printStackTrace();
 		}
         
        if(genListSize > 0) {
 	        //By default play first song
-	        playSong(0);
+	        playSong(0, 0);
 	        /**
 	         * Play button click event
 	         * plays a song and changes button to pause image
@@ -245,12 +256,12 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
 	            @Override
 	            public void onClick(View arg0) {
 	                // check if next song is there or not
-	                if(currentSongIndex < (songsList.size() - 1)){
-	                    playSong(currentSongIndex + 1);
+	                if(currentSongIndex < (songsListCur.size() - 1)){
+	                    playSong(currentSongIndex + 1, mode);
 	                    currentSongIndex = currentSongIndex + 1;
 	                }else{
 	                    // play first song
-	                    playSong(0);
+	                    playSong(0, mode);
 	                    currentSongIndex = 0;
 	                }
 	 
@@ -266,12 +277,12 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
 	            @Override
 	            public void onClick(View arg0) {
 	                if(currentSongIndex > 0){
-	                    playSong(currentSongIndex - 1);
+	                    playSong(currentSongIndex - 1, mode);
 	                    currentSongIndex = currentSongIndex - 1;
 	                }else{
 	                    // play last song
-	                    playSong(songsList.size() - 1);
-	                    currentSongIndex = songsList.size() - 1;
+	                    playSong(songsListCur.size() - 1, mode);
+	                    currentSongIndex = songsListCur.size() - 1;
 	                }
 	 
 	            }
@@ -341,7 +352,7 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
     	if(resultCode == 100) {
     		currentSongIndex = data.getExtras().getInt("songIndex");
     		//play selected song
-    		playSong(currentSongIndex);
+    		playSong(currentSongIndex, mode);
     	}
     }
     
@@ -349,16 +360,24 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
      * Function to play a song
      * @param songIndex - index of song
      */
-    public void playSong(int songIndex) {
+    public void playSong(int songIndex, int playlist) {
     	//Play song
     	try {
-    		
+    		if(mode == 0) {
+    			songsListCur = songsList;
+    		} else if (mode == 1) {
+    			songsListCur = songsListEasy;
+    		} else if (mode == 2) {
+    			songsListCur = songsListMed;
+    		} else {
+    			songsListCur = songsListHard;
+    		}
     		mp.reset();
-    		mp.setDataSource(songsList.get(songIndex).get("songPath"));
+    		mp.setDataSource(songsListCur.get(songIndex).get("songPath"));
     		mp.prepare();
     		mp.start();
     		//Displaying Song Title
-    		String songTitle = songsList.get(songIndex).get("songTitle");
+    		String songTitle = songsListCur.get(songIndex).get("songTitle");
     		songTitleLabel.setText(songTitle);
     		
     		//Changing Button Image to pause image
@@ -452,24 +471,34 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
      * */
     @Override
     public void onCompletion(MediaPlayer arg0) {
- 
+    	// checks mode after each song (workout intensity is updated after each song)
+    	if(mode == 0) {
+			songsListCur = songsList;
+		} else if (mode == 1) {
+			songsListCur = songsListEasy;
+		} else if (mode == 2) {
+			songsListCur = songsListMed;
+		} else {
+			songsListCur = songsListHard;
+		}
+    	
         // check for repeat is ON or OFF
         if(isRepeat){
             // repeat is on play same song again
-            playSong(currentSongIndex);
+            playSong(currentSongIndex, mode);
         } else if(isShuffle){
             // shuffle is on - play a random song
             Random rand = new Random();
-            currentSongIndex = rand.nextInt((songsList.size() - 1) - 0 + 1) + 0;
-            playSong(currentSongIndex);
+            currentSongIndex = rand.nextInt((songsListCur.size() - 1) - 0 + 1) + 0;
+            playSong(currentSongIndex, mode);
         } else{
             // no repeat or shuffle ON - play next song
-            if(currentSongIndex < (songsList.size() - 1)){
-                playSong(currentSongIndex + 1);
+            if(currentSongIndex < (songsListCur.size() - 1)){
+                playSong(currentSongIndex + 1, mode);
                 currentSongIndex = currentSongIndex + 1;
             }else{
                 // play first song
-                playSong(0);
+                playSong(0, mode);
                 currentSongIndex = 0;
             }
         }
@@ -545,16 +574,39 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
 								 }
 								 else {
 									 uploaded = false;
-									// System.out.println("hi hi hi hi hi");
+									String title = file.getName().substring(0, (file.getName().length()-4));
+									String path = file.getPath();
 									// System.out.println("file name" + file.getName().substring(0, (file.getName().length()-4)) + " counter" + count);
 									 ParseQuery<ParseObject> query = ParseQuery.getQuery("SongObject");
-									 query.whereEqualTo("title", file.getName().substring(0, (file.getName().length()-4)) );
+									 query.whereEqualTo("title", title );
 								       	try {
 								            List<ParseObject> queryResult = query.find();
 								            for(ParseObject so : queryResult) {
 								                ParseObject songObj = new ParseObject("SongObject");
 								                System.out.println("inside parse " + so.getString("title"));
 								                uploaded = true;
+								                
+												masterList.put(title, path);
+												 
+												// adds mode
+												String mode = so.getString("mode");
+												HashMap<String, String>song = new HashMap<String, String>();
+												song.put("songTitle", title); //-4 because .mp3
+												
+												 
+												if(mode.equals(easy)) {
+													song.put("mode", easy);
+													songsListEasy.add(song);
+												} else if(mode.equals(med)) {
+													song.put("mode", med);
+													songsListMed.add(song);
+												} else if(mode.equals(hard)) {
+												    song.put("mode", hard);
+												    songsListHard.add(song);
+												}
+												
+												
+												
 								            }
 								        }
 								        catch(ParseException e) {
@@ -593,35 +645,36 @@ implements OnCompletionListener, SeekBar.OnSeekBarChangeListener, SensorEventLis
 											int tempo = (int) track.getTempo();
 											String mode = "";
 											if(track.getTempo() >= 120 ) {
-												song.put("tempo", "fast");
+												song.put("mode", easy);
+												songsListEasy.add(song);
 												mode = "hard";
 											}
 											else if(tempo <= 90) {
-												song.put("tempo", "slow");
+												song.put("mode", med);
+												songsListMed.add(song);
 												mode = "easy";
 											}
 											else {
-												song.put("tempo", "med");
+												song.put("mode", hard);
+											    songsListHard.add(song);
 												mode ="med";
 											}
 											
-											songsListTempo.add(song);
+										
 											
 									        ParseObject songObject = new ParseObject("SongObject");
 									        songObject.put("path", file.getPath());
-									        songObject.put("title", file.getName().substring(0, (file.getName().length()-4)));
+									        songObject.put("title", title);
 									        songObject.put("mode", mode);
 									        songObject.saveInBackground();
+									        
+									        masterList.put(title, path);
 						                } else {
 						                    System.err.println("Trouble analysing track " + track.getStatus());
 						                }
 									 }
 								  }
 								 
-								/* HashMap<String, String> song = new HashMap<String, String>();
-								 song.put("songTitle", file.getName().substring(0, (file.getName().length()-4))); //-4 because .mp3
-								 song.put("songPath",  file.getPath());	
-								 songsList.add(song);*/
 								 
 				            } catch (IOException e) {
 				                System.err.println("Trouble uploading file");
